@@ -1,0 +1,1386 @@
+[
+    {
+        "id": "18eee671ad5df657",
+        "type": "tab",
+        "label": "Flow 4",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "2cd980bfc0a16a48",
+        "type": "http request",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://paqs.epd-asmg.gov.hk/data/data.json",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 180,
+        "y": 280,
+        "wires": [
+            [
+                "cde3910ca350c7f2"
+            ]
+        ]
+    },
+    {
+        "id": "2fac0b3442f18870",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 80,
+        "wires": [
+            [
+                "b51eaf78feda7b5a"
+            ]
+        ]
+    },
+    {
+        "id": "cde3910ca350c7f2",
+        "type": "json",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 390,
+        "y": 280,
+        "wires": [
+            [
+                "af54a3ae0da695bb"
+            ]
+        ]
+    },
+    {
+        "id": "3c8ad48bf8ad1133",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "174496b1a3aa6425",
+        "name": "Find",
+        "collection": "AirNEW",
+        "operation": "findOne",
+        "x": 390,
+        "y": 80,
+        "wires": [
+            [
+                "3e85701ccea873ec"
+            ]
+        ]
+    },
+    {
+        "id": "b51eaf78feda7b5a",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Retrieve Last Record Query",
+        "func": "msg.payload = [\n    {\n        \"$query\": {}\n    },\n    {\n        \"sort\": {\n            \"_id\": -1\n        }\n    }\n]\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 260,
+        "y": 180,
+        "wires": [
+            [
+                "3c8ad48bf8ad1133"
+            ]
+        ]
+    },
+    {
+        "id": "3e85701ccea873ec",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Get Last updateTime",
+        "func": "if(msg.payload.hasOwnProperty('ts')) {\n    flow.set('lastts', msg.payload.ts);\n} else {\n    flow.set('lastts', \"\");\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 580,
+        "y": 180,
+        "wires": [
+            [
+                "2cd980bfc0a16a48"
+            ]
+        ]
+    },
+    {
+        "id": "af54a3ae0da695bb",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "NEW",
+        "func": "\nvar lastts = flow.get('lastts');\n\nvar tsTemp = new Date(msg.payload.ts)\nvar ts = tsTemp.toISOString() ;\n\nif(ts > lastts) {\n    msg.needUpdate = true ;\n    msg.payload.ts = ts ;\n} else {\n    msg.needUpdate = false ;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 320,
+        "wires": [
+            [
+                "c460339bf38d5e5e"
+            ]
+        ]
+    },
+    {
+        "id": "c460339bf38d5e5e",
+        "type": "switch",
+        "z": "18eee671ad5df657",
+        "name": "Need Update",
+        "property": "needUpdate",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "false",
+                "vt": "jsonata"
+            },
+            {
+                "t": "eq",
+                "v": "true",
+                "vt": "jsonata"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 210,
+        "y": 400,
+        "wires": [
+            [
+                "c73a90347a6d6e46"
+            ],
+            [
+                "f8a15d7b4f429ec6"
+            ]
+        ]
+    },
+    {
+        "id": "f8a15d7b4f429ec6",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "174496b1a3aa6425",
+        "name": "Insert",
+        "collection": "AirNEW",
+        "operation": "insert",
+        "x": 450,
+        "y": 460,
+        "wires": [
+            [
+                "327519108b06ec58"
+            ]
+        ]
+    },
+    {
+        "id": "c73a90347a6d6e46",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "No Update",
+        "func": "msg.payload = \"No Update\"\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 470,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "327519108b06ec58",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.data[0].pm25",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 620,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "0e652ef987a283b8",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Construct Date Range",
+        "func": "var date = new Date();\nvar day = date.getDate() ;\nvar month = date.getMonth();\nvar year = date.getFullYear();\nvar hour = date.getHours();\nvar minutes = date.getMinutes();\nvar seconds = date.getSeconds();\nvar st, et ;\nvar minMilliSeconds = 60 * 1000;\nvar hourMilliSeconds = 60 * minMilliSeconds;\nvar dayMilliSeconds = 24 * hourMilliSeconds;\nvar duration = 1 * dayMilliSeconds;\n\net = date ;\net.setSeconds(seconds/10*10);\nst = new Date() ;\nst.setTime(et.getTime() - duration);\n\nmsg.startTime = st ;\nmsg.endTime = et ;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1020,
+        "y": 160,
+        "wires": [
+            [
+                "00b12199c2817bd6"
+            ]
+        ]
+    },
+    {
+        "id": "069049c725c55976",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "x": 920,
+        "y": 80,
+        "wires": [
+            [
+                "0e652ef987a283b8"
+            ]
+        ]
+    },
+    {
+        "id": "00b12199c2817bd6",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Construct Queries",
+        "func": "var st = msg.startTime;\nvar et = msg.endTime;\n\nvar stts = st.getTime();\nvar etts = et.getTime();\n\nvar ststr=st.toISOString();\nvar etstr=et.toISOString();\n\nvar query = { 'ts': { $gt: ststr, $lt: etstr} };\n\nmsg.payload = query;\nmsg.ststr = ststr ;\nmsg.etstr = etstr ;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 220,
+        "wires": [
+            [
+                "861dda29ab455b53"
+            ]
+        ]
+    },
+    {
+        "id": "861dda29ab455b53",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "174496b1a3aa6425",
+        "name": "Find",
+        "collection": "AirNEW",
+        "operation": "find.toArray",
+        "x": 1230,
+        "y": 180,
+        "wires": [
+            [
+                "e06e9e8c80ec4391"
+            ]
+        ]
+    },
+    {
+        "id": "e06e9e8c80ec4391",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Format Chart Data",
+        "func": "var DataArray = Object.values(msg.payload) ;\n\nvar dataCount = DataArray.length ;\n\nvar i, j ;\n\nvar placeDataArray = {} ;\n\n\nfor(j = 0; j < dataCount; j++) {\n    for(i = 0; i < DataArray[j].data.length; i++) {\n        if (!placeDataArray.hasOwnProperty(DataArray[j].data[i].lamppost.location_en)) {\n            placeDataArray[DataArray[j].data[i].lamppost.location_en] = [] ;\n        }\n        placeDataArray[DataArray[j].data[i].lamppost.location_en].push({\"x\": new Date(DataArray[j].ts), \"y\": DataArray[j].data[i].pm25});\n    }\n}\n\nvar chartData = [{\"series\": Object.keys(placeDataArray), \"data\": Object.values(placeDataArray), \"labels\": \"\"}];\n\nmsg.payload = chartData ;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1310,
+        "y": 100,
+        "wires": [
+            [
+                "9cf1cea23e59a515"
+            ]
+        ]
+    },
+    {
+        "id": "9cf1cea23e59a515",
+        "type": "ui_chart",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "6273cd62e158fd5a",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "pm2.5 chart",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "0",
+        "ymax": "80",
+        "removeOlder": "24",
+        "removeOlderPoints": "24",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1430,
+        "y": 180,
+        "wires": [
+            [
+                "fbb06c95754e3e8a"
+            ]
+        ]
+    },
+    {
+        "id": "fbb06c95754e3e8a",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1390,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "134552d108fe2372",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "ecc26120.5c01a8",
+        "name": "",
+        "collection": "Weather Report",
+        "operation": "insert",
+        "x": 860,
+        "y": 1320,
+        "wires": [
+            [
+                "fcb9e38f5b103edc"
+            ]
+        ]
+    },
+    {
+        "id": "54f0df0519a2d618",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "ecc26120.5c01a8",
+        "name": "HKO Retrieve Last Record",
+        "collection": "Weather Report",
+        "operation": "findOne",
+        "x": 440,
+        "y": 1020,
+        "wires": [
+            [
+                "cd09bcd3647dad4b"
+            ]
+        ]
+    },
+    {
+        "id": "e89cb1c13531aa05",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 1020,
+        "wires": [
+            [
+                "9a7012363919083d"
+            ]
+        ]
+    },
+    {
+        "id": "9a7012363919083d",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Retrieve Last Record Query",
+        "func": "msg.payload = [\n    {\n        \"$query\": {}\n    },\n    {\n        \"sort\": {\n            \"_id\": -1\n        }\n    }\n]\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 260,
+        "y": 1100,
+        "wires": [
+            [
+                "54f0df0519a2d618"
+            ]
+        ]
+    },
+    {
+        "id": "cd09bcd3647dad4b",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Get Last updateTime",
+        "func": "if(msg.payload.hasOwnProperty('updateTime')) {\n    flow.set('lastUpdateTime', msg.payload.updateTime);\n} else {\n    flow.set('lastUpdateTime', \"\");\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 580,
+        "y": 1100,
+        "wires": [
+            [
+                "9c5a710262d26538"
+            ]
+        ]
+    },
+    {
+        "id": "9c5a710262d26538",
+        "type": "http request",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": false,
+        "url": "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 220,
+        "y": 1200,
+        "wires": [
+            [
+                "2b2adbd3213f9949"
+            ]
+        ]
+    },
+    {
+        "id": "2b2adbd3213f9949",
+        "type": "json",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 230,
+        "y": 1300,
+        "wires": [
+            [
+                "acb924a50eb5f57e",
+                "d722ebd4e3d030c1",
+                "3e7cf887d33618be",
+                "b88ca2a320c6baf1",
+                "cc93203bf900c19e"
+            ]
+        ]
+    },
+    {
+        "id": "acb924a50eb5f57e",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "New Record Available",
+        "func": "lastUpdateTime = flow.get('lastUpdateTime');\n\nvar updateTimeTemp = new Date(msg.payload.updateTime)\nvar updateTime = updateTimeTemp.toISOString() ;\n\nif(updateTime > lastUpdateTime) {\n    msg.needUpdate = true ;\n    msg.payload.updateTime = updateTime ;\n} else {\n    msg.needUpdate = false ;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 480,
+        "y": 1220,
+        "wires": [
+            [
+                "1ff9364eec344e50"
+            ]
+        ]
+    },
+    {
+        "id": "1ff9364eec344e50",
+        "type": "switch",
+        "z": "18eee671ad5df657",
+        "name": "Need Update",
+        "property": "needUpdate",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "false",
+                "vt": "jsonata"
+            },
+            {
+                "t": "eq",
+                "v": "true",
+                "vt": "jsonata"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 590,
+        "y": 1300,
+        "wires": [
+            [
+                "2398b9fd2a69f0ad"
+            ],
+            [
+                "134552d108fe2372"
+            ]
+        ]
+    },
+    {
+        "id": "2398b9fd2a69f0ad",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "No Update",
+        "func": "msg.payload = \"No Update\"\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 810,
+        "y": 1260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fcb9e38f5b103edc",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "x": 1110,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "02b8db0a26511150",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "ecc26120.5c01a8",
+        "name": "HKO Retrieve Records",
+        "collection": "Weather Report",
+        "operation": "find.toArray",
+        "x": 260,
+        "y": 860,
+        "wires": [
+            [
+                "6eb2350b2c235a2d",
+                "0c507156060e19a8"
+            ]
+        ]
+    },
+    {
+        "id": "6a892ad80d015ced",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Construct Date Range",
+        "func": "var date = new Date();\nvar day = date.getDate() ;\nvar month = date.getMonth();\nvar year = date.getFullYear();\nvar hour = date.getHours();\nvar minutes = date.getMinutes();\nvar seconds = date.getSeconds();\nvar st, et ;\nvar minMilliSeconds = 60 * 1000;\nvar hourMilliSeconds = 60 * minMilliSeconds;\nvar dayMilliSeconds = 24 * hourMilliSeconds;\nvar duration = 1 * dayMilliSeconds;\n\net = date ;\net.setSeconds(seconds/10*10);\nst = new Date() ;\nst.setTime(et.getTime() - duration);\n\nmsg.startTime = st ;\nmsg.endTime = et ;\n\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 260,
+        "y": 680,
+        "wires": [
+            [
+                "0250a6d97e21f324"
+            ]
+        ]
+    },
+    {
+        "id": "0250a6d97e21f324",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Construct Queries",
+        "func": "var st = msg.startTime;\nvar et = msg.endTime;\n\nvar stts = st.getTime();\nvar etts = et.getTime();\n\nvar ststr=st.toISOString();\nvar etstr=et.toISOString();\n\nvar query = { 'updateTime': { $gt: ststr, $lt: etstr} };\n\nmsg.payload = query;\nmsg.ststr = ststr ;\nmsg.etstr = etstr ;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 390,
+        "y": 760,
+        "wires": [
+            [
+                "02b8db0a26511150"
+            ]
+        ]
+    },
+    {
+        "id": "6eb2350b2c235a2d",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Format Chart Data",
+        "func": "var weatherDataArray = Object.values(msg.payload);\n\nvar dataCount = weatherDataArray.length;\n\nvar i, j;\n\nvar placeDataArray = {};\n\n// 定义我们感兴趣的地区名称\nvar interestedPlaces = [\"King's Park\", \"Hong Kong Observatory\"];\n\nfor(j = 0; j < dataCount; j++) {\n    for(i = 0; i < weatherDataArray[j].temperature.data.length; i++) {\n        // 检查当前地区是否是我们感兴趣的地区之一\n        if(interestedPlaces.includes(weatherDataArray[j].temperature.data[i].place)) {\n            // 如果是，继续处理\n            if(!placeDataArray.hasOwnProperty(weatherDataArray[j].temperature.data[i].place)) {\n                placeDataArray[weatherDataArray[j].temperature.data[i].place] = [];\n            }\n            placeDataArray[weatherDataArray[j].temperature.data[i].place].push({\"x\": new Date(weatherDataArray[j].temperature.recordTime), \"y\": weatherDataArray[j].temperature.data[i].value});\n        }\n    }\n}\n\nvar chartData = [{\"series\": Object.keys(placeDataArray), \"data\": Object.values(placeDataArray), \"labels\": \"\"}];\n\nmsg.payload = chartData;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 840,
+        "wires": [
+            [
+                "4299d11b0d362041"
+            ]
+        ]
+    },
+    {
+        "id": "4299d11b0d362041",
+        "type": "ui_chart",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "049611247996badd",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "Temperature Chart",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "10",
+        "ymax": "30",
+        "removeOlder": "24",
+        "removeOlderPoints": "240",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 650,
+        "y": 700,
+        "wires": [
+            [
+                "a87ffa68d49de7c9"
+            ]
+        ]
+    },
+    {
+        "id": "da365652ef564c9b",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 760,
+        "wires": [
+            [
+                "6a892ad80d015ced"
+            ]
+        ]
+    },
+    {
+        "id": "a87ffa68d49de7c9",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 750,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "882a4394497e71f2",
+        "type": "ui_gauge",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "049611247996badd",
+        "order": 3,
+        "width": 6,
+        "height": 6,
+        "gtype": "gage",
+        "title": "Hong Kong Observatory",
+        "label": "℃",
+        "format": "{{value}}",
+        "min": "10",
+        "max": "30",
+        "colors": [
+            "#00b500",
+            "#00e6d6",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 850,
+        "y": 1520,
+        "wires": []
+    },
+    {
+        "id": "d722ebd4e3d030c1",
+        "type": "change",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.temperature.data[1].value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1520,
+        "wires": [
+            [
+                "882a4394497e71f2"
+            ]
+        ]
+    },
+    {
+        "id": "3e7cf887d33618be",
+        "type": "change",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.temperature.data[0].value",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1460,
+        "wires": [
+            [
+                "ecd9322393497c33"
+            ]
+        ]
+    },
+    {
+        "id": "ecd9322393497c33",
+        "type": "ui_gauge",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "049611247996badd",
+        "order": 4,
+        "width": 6,
+        "height": 6,
+        "gtype": "gage",
+        "title": "King's Park",
+        "label": "℃",
+        "format": "{{value}}",
+        "min": "10",
+        "max": "30",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 810,
+        "y": 1460,
+        "wires": []
+    },
+    {
+        "id": "0c507156060e19a8",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "Format Chart Data",
+        "func": "var weatherDataArray = Object.values(msg.payload);\n\nvar dataCount = weatherDataArray.length;\n\nvar a, b;\n\nvar placeDataArray = {};\n\n\n\n\n\n// 定义我们感兴趣的地区名称\nvar interestedPlaces = [\"Central & Western District\",\"Sai Kung\"];\n\nfor(b = 0; b < dataCount; b++) {\n    for(a = 0; a < weatherDataArray[b].rainfall.data.length; a++) {\n        // 检查当前地区是否是我们感兴趣的地区之一\n        if(interestedPlaces.includes(weatherDataArray[b].rainfall.data[a].place)) {\n            // 如果是，继续处理\n            if (!placeDataArray.hasOwnProperty(weatherDataArray[b].rainfall.data[a].place)) {\n                placeDataArray[weatherDataArray[b].rainfall.data[a].place] = [];\n            }\n            placeDataArray[weatherDataArray[b].rainfall.data[a].place].push({ \"x\": new Date(weatherDataArray[b].rainfall.place), \"y\": weatherDataArray[b].rainfall.data[a].max});\n        }\n    }\n}\n\nvar chartData = [{\"series\": Object.keys(placeDataArray), \"data\": Object.values(placeDataArray), \"labels\": \"\"}];\n\nmsg.payload = chartData;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 900,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7ffe9d6eb111a007",
+        "type": "ui_gauge",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "6273cd62e158fd5a",
+        "order": 2,
+        "width": 6,
+        "height": 7,
+        "gtype": "wave",
+        "title": "Rainfall level - Kowloon City",
+        "label": "mm",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "50",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 860,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "b88ca2a320c6baf1",
+        "type": "change",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.rainfall.data[15].max",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1400,
+        "wires": [
+            [
+                "7ffe9d6eb111a007"
+            ]
+        ]
+    },
+    {
+        "id": "cc93203bf900c19e",
+        "type": "change",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.rainfall.data[0].max",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 610,
+        "y": 1600,
+        "wires": [
+            [
+                "4d77de4f90263218"
+            ]
+        ]
+    },
+    {
+        "id": "4d77de4f90263218",
+        "type": "ui_gauge",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "group": "6273cd62e158fd5a",
+        "order": 3,
+        "width": 6,
+        "height": 7,
+        "gtype": "wave",
+        "title": "Rainfall level - Central & Western District",
+        "label": "mm",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "50",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 900,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "638d4df6418b0cde",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1000,
+        "y": 1180,
+        "wires": [
+            [
+                "588512a80e401f61"
+            ]
+        ]
+    },
+    {
+        "id": "588512a80e401f61",
+        "type": "template",
+        "z": "18eee671ad5df657",
+        "name": "Map style",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<iframe src=\"../worldmap\"\n        style=height: 100%; width:100%>\n</iframe>",
+        "output": "str",
+        "x": 1320,
+        "y": 1180,
+        "wires": [
+            [
+                "500c381d428965a7"
+            ]
+        ]
+    },
+    {
+        "id": "be416365a1111913",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 890,
+        "y": 860,
+        "wires": [
+            [
+                "21f66eeb2c6f7c52"
+            ]
+        ]
+    },
+    {
+        "id": "24dc0dd41dbf24f0",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "get api",
+        "func": "const value = msg.payload.features;\n\nmsg.payload = [value]\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1230,
+        "y": 860,
+        "wires": [
+            [
+                "d183fdb6af2cf802"
+            ]
+        ]
+    },
+    {
+        "id": "21f66eeb2c6f7c52",
+        "type": "http request",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.csdi.gov.hk/apim/dataquery/api/?id=epd_rcd_1629267205214_40635&layer=aqmn&bbox-crs=WGS84&bbox=113.8,22.1,114.7,23.0&limit=20&offset=0",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1070,
+        "y": 880,
+        "wires": [
+            [
+                "24dc0dd41dbf24f0"
+            ]
+        ]
+    },
+    {
+        "id": "22a4597627a91ee0",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "debug location1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1680,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "d183fdb6af2cf802",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "a6f0d38925377bce",
+        "name": "Insert Location",
+        "collection": "Location",
+        "operation": "insertMany",
+        "x": 1460,
+        "y": 880,
+        "wires": [
+            [
+                "22a4597627a91ee0"
+            ]
+        ]
+    },
+    {
+        "id": "8aec86a3bc3232b6",
+        "type": "inject",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 890,
+        "y": 1060,
+        "wires": [
+            [
+                "ced35169a8a17b4b"
+            ]
+        ]
+    },
+    {
+        "id": "023d181a0e115cdf",
+        "type": "function",
+        "z": "18eee671ad5df657",
+        "name": "get api 2",
+        "func": "const value = msg.payload;\n\nmsg.payload = [value]\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1260,
+        "y": 1040,
+        "wires": [
+            [
+                "5f3f5754fe53bbce"
+            ]
+        ]
+    },
+    {
+        "id": "ced35169a8a17b4b",
+        "type": "http request",
+        "z": "18eee671ad5df657",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://dashboard.data.gov.hk/api/aqhi-individual?format=json",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1100,
+        "y": 1080,
+        "wires": [
+            [
+                "023d181a0e115cdf"
+            ]
+        ]
+    },
+    {
+        "id": "24348db1c62c511b",
+        "type": "debug",
+        "z": "18eee671ad5df657",
+        "name": "debug pollution",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1720,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "5f3f5754fe53bbce",
+        "type": "mongodb3 in",
+        "z": "18eee671ad5df657",
+        "service": "_ext_",
+        "configNode": "522b1731aaac9256",
+        "name": "Insert Pollution",
+        "collection": "pollution",
+        "operation": "insertMany",
+        "x": 1500,
+        "y": 1040,
+        "wires": [
+            [
+                "24348db1c62c511b"
+            ]
+        ]
+    },
+    {
+        "id": "500c381d428965a7",
+        "type": "ui_worldmap",
+        "z": "18eee671ad5df657",
+        "group": "057219c03305e298",
+        "order": 1,
+        "width": 31,
+        "height": 22,
+        "name": "MAP",
+        "lat": "22.3202",
+        "lon": "114.2128",
+        "zoom": "12",
+        "layer": "EsriC",
+        "cluster": "",
+        "maxage": "",
+        "usermenu": "show",
+        "layers": "show",
+        "panit": "false",
+        "panlock": "false",
+        "zoomlock": "false",
+        "hiderightclick": "true",
+        "coords": "none",
+        "showgrid": "false",
+        "showruler": "false",
+        "allowFileDrop": "false",
+        "path": "/worldmap",
+        "overlist": "DR,CO,RA,DN,HM",
+        "maplist": "OSMG,OSMC,EsriC,EsriS,EsriT,EsriDG,UKOS",
+        "mapname": "",
+        "mapurl": "",
+        "mapopt": "",
+        "mapwms": false,
+        "x": 1610,
+        "y": 1180,
+        "wires": []
+    },
+    {
+        "id": "747ca75fbc8fa7eb",
+        "type": "ui_spacer",
+        "z": "18eee671ad5df657",
+        "name": "spacer",
+        "group": "049611247996badd",
+        "order": 2,
+        "width": 12,
+        "height": 1
+    },
+    {
+        "id": "174496b1a3aa6425",
+        "type": "mongodb3",
+        "uri": "mongodb://mongodb:27017/",
+        "name": "Demo",
+        "options": "",
+        "parallelism": "-1"
+    },
+    {
+        "id": "6273cd62e158fd5a",
+        "type": "ui_group",
+        "z": "18eee671ad5df657",
+        "name": "pm2.5",
+        "tab": "b591692120bb5d77",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "ecc26120.5c01a8",
+        "type": "mongodb3",
+        "uri": "mongodb://mongodb:27017",
+        "name": "Air",
+        "options": "",
+        "parallelism": "-1"
+    },
+    {
+        "id": "049611247996badd",
+        "type": "ui_group",
+        "name": "Temperature",
+        "tab": "b591692120bb5d77",
+        "order": 2,
+        "disp": true,
+        "width": 12,
+        "collapse": false
+    },
+    {
+        "id": "a6f0d38925377bce",
+        "type": "mongodb3",
+        "uri": "mongodb://mongodb:27017/",
+        "name": "Location",
+        "options": "",
+        "parallelism": "-1"
+    },
+    {
+        "id": "522b1731aaac9256",
+        "type": "mongodb3",
+        "uri": "mongodb://mongodb:27017/",
+        "name": "pollution",
+        "options": "",
+        "parallelism": "-1"
+    },
+    {
+        "id": "057219c03305e298",
+        "type": "ui_group",
+        "name": "HK MAP",
+        "tab": "2f0d1cfb42e3c157",
+        "order": 2,
+        "disp": true,
+        "width": "31",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "b591692120bb5d77",
+        "type": "ui_tab",
+        "name": "Main Panel",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "2f0d1cfb42e3c157",
+        "type": "ui_tab",
+        "name": "HK MAP",
+        "icon": "dashboard",
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    }
+]
